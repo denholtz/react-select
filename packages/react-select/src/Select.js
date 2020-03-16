@@ -404,7 +404,12 @@ export default class Select extends Component<Props, State> {
         : { render: [], focusable: [] };
       const focusedValue = this.getNextFocusedValue(selectValue);
       const focusedOption = this.getNextFocusedOption(menuOptions.focusable);
-      this.setState({ menuOptions, selectValue, focusedOption, focusedValue });
+      
+      if(this.props.lastSelectedFieldId){
+        this.setState({ menuOptions, selectValue, focusedValue });
+      } else {
+        this.setState({ menuOptions, selectValue, focusedOption, focusedValue });
+      }
     }
     // some updates should toggle the state of the input visibility
     if (this.inputIsHiddenAfterUpdate != null) {
@@ -484,6 +489,7 @@ export default class Select extends Component<Props, State> {
 
   openMenu(focusOption: 'first' | 'last') {
     const { menuOptions, selectValue, isFocused } = this.state;
+
     const { isMulti } = this.props;
     let openAtIndex =
       focusOption === 'first' ? 0 : menuOptions.focusable.length - 1;
@@ -499,12 +505,25 @@ export default class Select extends Component<Props, State> {
     this.scrollToFocusedOptionOnUpdate = !(isFocused && this.menuListRef);
     this.inputIsHiddenAfterUpdate = false;
 
+    let focusTarget = null;
+
+    if(this.props.lastSelectedFieldId){
+      for(let i = 0; i < this.props.options.length; i++){
+        let result = this.props.options[i].options.find(item => item.data.ID === this.props.lastSelectedFieldId);
+        if(result){
+          focusTarget = result;
+          break;
+        }
+      }
+    }
+
+    let focusedOption = focusOption === 'first' && focusTarget ? focusTarget : menuOptions.focusable[openAtIndex];
+
     this.onMenuOpen();
     this.setState({
       focusedValue: null,
-      focusedOption: menuOptions.focusable[openAtIndex],
+      focusedOption: focusedOption,
     });
-
     this.announceAriaLiveContext({ event: 'menu' });
   }
   focusValue(direction: 'previous' | 'next') {
